@@ -1,6 +1,7 @@
 package com.example.composestatepractice
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.animateContentSize
@@ -45,14 +46,16 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Greeting(name: String) {
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
-        items(20) {
-            ExpandableText(
-                text = "這款產品真是太棒了！我剛剛買了一個，使用起來非常方便，質感也非常好。它的功能也很強大，能滿足我的所有需求。另外，售後服務也非常周到，在我遇到問題時給了我很大的幫助。我強烈推薦這款產品給大家！",
-                fontSize = 13,
-                seeMoreFontSize = 13,
-                seeMoreColor = Color(0xFF027BFF),
-                minimizedMaxLines = 2
-            )
+        items(30) {
+//            ExpandableText(
+//                text = "這款產品真是太棒了！我剛剛買了一個，使用起來非常方便，質感也非常好。它的功能也很強大，能滿足我的所有需求。另外，售後服務也非常周到，在我遇到問題時給了我很大的幫助。我強烈推薦這款產品給大家！",
+//                fontSize = 13,
+//                seeMoreFontSize = 13,
+//                seeMoreColor = Color(0xFF027BFF),
+//                minimizedMaxLines = 2
+//            )
+            ExpandingText(text = "這款產品真是太棒了！我剛剛買了一個，使用起來非常方便，質感也非常好。它的功能也很強大，能滿足我的所有需求。另外，售後服務也非常周到，在我遇到問題時給了我很大的幫助。我強烈推薦這款產品給大家！")
+
         }
     }
 }
@@ -76,72 +79,111 @@ fun ExpandableText(
     val seeMoreSize = seeMoreSizeState.value
     val seeMoreOffset = seeMoreOffsetState.value
 
-    LaunchedEffect(text, expanded, textLayoutResult, seeMoreSize) {
-        val lastLineIndex = minimizedMaxLines - 1
-        if (!expanded && textLayoutResult != null && seeMoreSize != null
-            && lastLineIndex + 1 == textLayoutResult.lineCount
-            && textLayoutResult.isLineEllipsized(lastLineIndex)
-        ) {
-            // 顯示更多區塊的繪製座標 : (x = 全部文字長度-顯示更多文字的長度, y = 全部文字的底-顯示更多文字的高度)
-            var lastCharIndex = textLayoutResult.getLineEnd(lastLineIndex, visibleEnd = true) + 1
-            var charRect: Rect
-            do {
-                lastCharIndex -= 1
-                charRect = textLayoutResult.getCursorRect(lastCharIndex)
-            } while (
-                charRect.left > textLayoutResult.size.width - seeMoreSize.width
-            )
-            seeMoreOffsetState.value = Offset(charRect.left, charRect.bottom - seeMoreSize.height)
-            cutText = text.substring(startIndex = 0, endIndex = lastCharIndex)
-        }
-    }
+//    LaunchedEffect(text, expanded, textLayoutResult, seeMoreSize) {
+//        val lastLineIndex = minimizedMaxLines - 1
+//        if (!expanded && textLayoutResult != null && seeMoreSize != null
+//            && lastLineIndex + 1 == textLayoutResult.lineCount
+//            && textLayoutResult.isLineEllipsized(lastLineIndex)
+//        ) {
+//            // 顯示更多區塊的繪製座標 : (x = 全部文字長度-顯示更多文字的長度, y = 全部文字的底-顯示更多文字的高度)
+//            var lastCharIndex = textLayoutResult.getLineEnd(lastLineIndex, visibleEnd = true) + 1
+//            var charRect: Rect
+//            do {
+//                lastCharIndex -= 1
+//                charRect = textLayoutResult.getCursorRect(lastCharIndex)
+//            } while (
+//                charRect.left > textLayoutResult.size.width - seeMoreSize.width
+//            )
+//            seeMoreOffsetState.value = Offset(charRect.left, charRect.bottom - seeMoreSize.height)
+//            cutText = text.substring(startIndex = 0, endIndex = lastCharIndex)
+//        }
+//    }
 
     Box(modifier) {
         Text(
-            text = cutText ?: text,
+//            text = cutText ?: text,
+            text = text,
             fontSize = fontSize.sp,
             maxLines = if (expanded) Int.MAX_VALUE else minimizedMaxLines,
             overflow = TextOverflow.Ellipsis,
-            onTextLayout = { textLayoutResultState.value = it },
+//            onTextLayout = { textLayoutResultState.value = it },
             modifier = modifier.animateContentSize(animationSpec = spring(
                 dampingRatio = Spring.DampingRatioLowBouncy,
                 stiffness = Spring.StiffnessLow
             )
             )
         )
-        if (!expanded) {
-            val density = LocalDensity.current
-            Text(
-                text = buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = Color.Black)) {
-                        append("... ")
-                    }
-                    withStyle(style = SpanStyle(color = seeMoreColor)) {
-                        append("展開全部")
-                    }
-                },
-                onTextLayout = { seeMoreSizeState.value = it.size },
-                modifier = Modifier
-                    .then(
-                        if (seeMoreOffset != null)
-                            Modifier.offset(
-                                x = with(density) { seeMoreOffset.x.toDp() },
-                                y = with(density) { seeMoreOffset.y.toDp() },
-                            )
-                        else
-                            Modifier
-                    )
-                    .clickable {
-                        expanded = true
-                        cutText = null
-                    }
-                    .alpha(if (seeMoreOffset != null) 1f else 0f)
-                    .animateContentSize(),
-                fontSize = seeMoreFontSize.sp,
-                color = seeMoreColor,
-            )
+//        if (!expanded) {
+//            val density = LocalDensity.current
+//            Text(
+//                text = buildAnnotatedString {
+//                    withStyle(style = SpanStyle(color = Color.Black)) {
+//                        append("... ")
+//                    }
+//                    withStyle(style = SpanStyle(color = seeMoreColor)) {
+//                        append("展開全部")
+//                    }
+//                },
+//                onTextLayout = { seeMoreSizeState.value = it.size },
+//                modifier = Modifier
+//                    .then(
+//                        if (seeMoreOffset != null)
+//                            Modifier.offset(
+//                                x = with(density) { seeMoreOffset.x.toDp() },
+//                                y = with(density) { seeMoreOffset.y.toDp() },
+//                            )
+//                        else
+//                            Modifier
+//                    )
+//                    .clickable {
+//                        expanded = true
+//                        cutText = null
+//                    }
+//                    .alpha(if (seeMoreOffset != null) 1f else 0f)
+//                    .animateContentSize(),
+//                fontSize = seeMoreFontSize.sp,
+//                color = seeMoreColor,
+//            )
+//        }
+    }
+}
+
+@Composable
+fun ExpandingText(modifier: Modifier = Modifier, text: String) {
+    var isExpanded by remember { mutableStateOf(false) } // 是否已展開
+    val textLayoutResultState = remember { mutableStateOf<TextLayoutResult?>(null) } //TextLayoutResult的State
+    var finalText by remember { mutableStateOf(text) } // 欲顯示的文字
+
+    val textLayoutResult = textLayoutResultState.value
+    LaunchedEffect(textLayoutResult) {
+        if (textLayoutResult == null) return@LaunchedEffect
+
+        when {
+            isExpanded -> {
+                finalText = text
+            }
+            textLayoutResult.hasVisualOverflow -> {
+                val lastCharIndex = textLayoutResult.getLineEnd(1, true)
+                val showMoreString = "... 展開全部"
+//                val showMoreString = "展開全部"
+                Log.d("Joe->", lastCharIndex.toString())
+                val adjustedText = text
+                    .substring(startIndex = 0, endIndex = lastCharIndex - showMoreString.length ) //TODO: ... 會有影響
+
+                finalText = "$adjustedText$showMoreString"
+
+            }
         }
     }
+
+    Text(
+        text = finalText,
+        maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+        onTextLayout = { textLayoutResultState.value = it },
+        modifier = modifier
+            .clickable { isExpanded = !isExpanded }
+            .animateContentSize(),
+    )
 }
 
 @Preview(showBackground = true)
