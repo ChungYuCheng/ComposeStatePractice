@@ -10,22 +10,21 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -101,8 +100,7 @@ fun ExpandableText(
 
     Box(modifier) {
         Text(
-//            text = cutText ?: text,
-            text = text,
+            text = cutText ?: text,
             fontSize = fontSize.sp,
             maxLines = if (expanded) Int.MAX_VALUE else minimizedMaxLines,
             overflow = TextOverflow.Ellipsis,
@@ -150,6 +148,12 @@ fun ExpandableText(
 
 @Composable
 fun ExpandingText(modifier: Modifier = Modifier, text: String) {
+    val ellipsis = Char(0x2026) // 16-bit Unicode格式的省略號
+    val space = Char(0x0020) // 16-bit Unicode格式的空白格
+    val showMoreString = "${ellipsis}${space}展開全部"
+
+    Log.d("Joe showMoreString ->", showMoreString.length.toString())
+
     var isExpanded by remember { mutableStateOf(false) } // 是否已展開
     val textLayoutResultState = remember { mutableStateOf<TextLayoutResult?>(null) } //TextLayoutResult的State
     var finalText by remember { mutableStateOf(text) } // 欲顯示的文字
@@ -164,26 +168,32 @@ fun ExpandingText(modifier: Modifier = Modifier, text: String) {
             }
             textLayoutResult.hasVisualOverflow -> {
                 val lastCharIndex = textLayoutResult.getLineEnd(1, true)
-                val showMoreString = "... 展開全部"
-//                val showMoreString = "展開全部"
-                Log.d("Joe->", lastCharIndex.toString())
-                val adjustedText = text
-                    .substring(startIndex = 0, endIndex = lastCharIndex - showMoreString.length ) //TODO: ... 會有影響
-
-                finalText = "$adjustedText$showMoreString"
-
+                finalText = text.substring(startIndex = 0, endIndex = lastCharIndex - showMoreString.length) //TODO: ... 會有影響
             }
         }
     }
 
-    Text(
-        text = finalText,
-        maxLines = if (isExpanded) Int.MAX_VALUE else 2,
-        onTextLayout = { textLayoutResultState.value = it },
-        modifier = modifier
-            .clickable { isExpanded = !isExpanded }
-            .animateContentSize(),
-    )
+    Box(modifier = modifier) {
+        Text(
+            text = finalText,
+            maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+            onTextLayout = { textLayoutResultState.value = it },
+            modifier = Modifier
+                .animateContentSize(animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)))
+
+        if (isExpanded.not()) {
+            Text(text = buildAnnotatedString {
+                withStyle(style = SpanStyle(color = Color.Black)) {
+                    append(ellipsis)
+                    append(space)
+                }
+                withStyle(style = SpanStyle(color = Color.Blue)) {
+                    append("展開全部")
+                }
+            }, modifier = Modifier.clickable { isExpanded = !isExpanded }.align(Alignment.BottomEnd))
+        }
+    }
+
 }
 
 @Preview(showBackground = true)
