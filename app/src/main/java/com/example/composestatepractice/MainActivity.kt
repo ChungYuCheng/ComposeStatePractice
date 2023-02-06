@@ -46,14 +46,9 @@ class MainActivity : ComponentActivity() {
 fun Greeting(name: String) {
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
         items(30) {
-//            ExpandableText(
-//                text = "這款產品真是太棒了！我剛剛買了一個，使用起來非常方便，質感也非常好。它的功能也很強大，能滿足我的所有需求。另外，售後服務也非常周到，在我遇到問題時給了我很大的幫助。我強烈推薦這款產品給大家！",
-//                fontSize = 13,
-//                seeMoreFontSize = 13,
-//                seeMoreColor = Color(0xFF027BFF),
-//                minimizedMaxLines = 2
-//            )
-            ExpandingText(text = "這款產品真是太棒了！我剛剛買了一個，使用起來非常方便，質感也非常好。它的功能也很強大，能滿足我的所有需求。另外，售後服務也非常周到，在我遇到問題時給了我很大的幫助。我強烈推薦這款產品給大家！")
+            ExpandingText(text = "這款產品真是太棒了！我剛剛買了一個，使用起來非常方便，質感也非常好。它的功能也很強大，能滿足我的所有需求。另外，售後服務也非常周到，在我遇到問題時給了我很大的幫助。我強烈推薦這款產品給大家！",
+            showMoreText = "展開全部", showMoreColor = Color.Blue, showMoreTextSize = 13, maxLines = 2
+                )
 
         }
     }
@@ -147,15 +142,19 @@ fun ExpandableText(
 }
 
 @Composable
-fun ExpandingText(modifier: Modifier = Modifier, text: String) {
+fun ExpandingText(modifier: Modifier = Modifier,
+                  text: String,
+                  showMoreText: String,
+                  showMoreTextSize: Int,
+                  showMoreColor: Color,
+                  maxLines: Int,
+) {
     val ellipsis = Char(0x2026) // 16-bit Unicode格式的省略號
     val space = Char(0x0020) // 16-bit Unicode格式的空白格
-    val showMoreString = "${ellipsis}${space}展開全部"
-
-    Log.d("Joe showMoreString ->", showMoreString.length.toString())
+    val showMoreString = "${space}${showMoreText}"
 
     var isExpanded by remember { mutableStateOf(false) } // 是否已展開
-    val textLayoutResultState = remember { mutableStateOf<TextLayoutResult?>(null) } //TextLayoutResult的State
+    val textLayoutResultState = remember { mutableStateOf<TextLayoutResult?>(null) }
     var finalText by remember { mutableStateOf(text) } // 欲顯示的文字
 
     val textLayoutResult = textLayoutResultState.value
@@ -167,8 +166,8 @@ fun ExpandingText(modifier: Modifier = Modifier, text: String) {
                 finalText = text
             }
             textLayoutResult.hasVisualOverflow -> {
-                val lastCharIndex = textLayoutResult.getLineEnd(1, true)
-                finalText = text.substring(startIndex = 0, endIndex = lastCharIndex - showMoreString.length) //TODO: ... 會有影響
+                val lastCharIndex = textLayoutResult.getLineEnd(maxLines - 1, true)
+                finalText = text.substring(startIndex = 0, endIndex = lastCharIndex - showMoreString.length).plus(ellipsis)
             }
         }
     }
@@ -176,7 +175,7 @@ fun ExpandingText(modifier: Modifier = Modifier, text: String) {
     Box(modifier = modifier) {
         Text(
             text = finalText,
-            maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+            maxLines = if (isExpanded) Int.MAX_VALUE else maxLines,
             onTextLayout = { textLayoutResultState.value = it },
             modifier = Modifier
                 .animateContentSize(animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)))
@@ -184,11 +183,10 @@ fun ExpandingText(modifier: Modifier = Modifier, text: String) {
         if (isExpanded.not()) {
             Text(text = buildAnnotatedString {
                 withStyle(style = SpanStyle(color = Color.Black)) {
-                    append(ellipsis)
                     append(space)
                 }
                 withStyle(style = SpanStyle(color = Color.Blue)) {
-                    append("展開全部")
+                    append(showMoreText)
                 }
             }, modifier = Modifier.clickable { isExpanded = !isExpanded }.align(Alignment.BottomEnd))
         }
